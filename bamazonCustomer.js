@@ -68,7 +68,7 @@ function buyBam() {
         }
 
     ]).then(function buyItems (){
-        console.log(answers.id)
-        console.log(answers.quanity)
+        console.log(answer.id)
+        console.log(answer.quanity)
     })
 }
