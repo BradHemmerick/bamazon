@@ -24,7 +24,7 @@ var startBam = function () {
         if (answer.postorBid == "Shop") {
             shop();
         } else {
-            process.exit();
+            connection.end();
         }
     })
 }
@@ -35,7 +35,9 @@ function shop() {
         'SELECT * FROM products',
         function (err, res) {
             if (err) throw err;
-            console.log(res);
+            for(var i = 0; i < res.length; i++){
+                console.log(`Id: ${res[i].item_id} Name: ${res[i].product_name} Price: ${res[i].price} Quantity: ${res[i].stock_quantity}`);
+            }
             buyBam();
         }
     )
@@ -67,8 +69,41 @@ function buyBam() {
             }
         }
 
-    ]).then(function buyItems (){
-        console.log(answer.id)
+    ]).then(function buyItems (answer){
+        console.log(answer.grabID)
         console.log(answer.quanity)
+        var query = 'SELECT * FROM products WHERE item_id = ?';
+        connection.query(query, [answer.grabID], function (err, res) {
+                if (err) throw err;
+                // console.log(res);
+						completeOrder(res[0], answer.grabID, parseInt(answer.quanity))
+              
+            }
+        )
+
     })
+}
+
+function completeOrder(resObj, usrProdID, usrQty){
+    //see if the quantity is not more then what the user ordered
+    if(resObj.stock_quantity > usrQty){
+				//update our database subtracting the quantity from the stock quantity
+			var quanity = resObj.stock_quantity - usrQty;
+
+			var query = "UPDATE products SET stock_quantity = ? WHERE item_id = ?";
+
+			connection.query(query, [quanity, usrProdID], function (err, res) {
+                if (err) throw err;
+								// console.log(res);
+								console.log(`order was successfully completed your card will be billed for the ammount of $${usrQty * resObj.price}.00 usd`)
+                connection.end()
+            }
+        )
+		}
+		else{
+			console.log(`ERROR: the product you orded does not have enought stock to be purchesd `);
+			connection.end()
+		}
+		
+    //show message saying their is not enough product
 }
